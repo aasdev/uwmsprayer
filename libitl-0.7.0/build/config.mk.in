@@ -1,0 +1,15 @@
+#--
+# $Id: config.mk.in,v 1.3 2006/09/21 16:32:39 thamer Exp $
+#--
+#
+# config.mk.in -- autoconf template for ITL
+#
+# DO NOT EDIT config.mk!!  It will be overwritten by configure.
+# Edit Makefile and run "make" or run ./configure with other arguments.
+
+CC=@CC@
+CFLAGS=@CFLAGS@
+LDFLAGS=@LDFLAGS@
+PREFIX=@prefix@
+VERSION=@PACKAGE_VERSION@
+TARNAME=@PACKAGE_TARNAME@

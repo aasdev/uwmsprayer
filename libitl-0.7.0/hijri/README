@@ -1,0 +1,29 @@
+#--
+# $Id: README,v 1.8 2004/03/24 02:39:31 nadim Exp $
+#--
+
+Al Salam Alykom Wa Rahmat Allah Wa Barakatoh.
+
+This directory contains on-going work that pertains to the generation
+of Hijri date generators and converters.
+
+The idea is to create a library-module which, based on user input,
+can generate and convert Hijri dates based on a variety of calculation
+methods.
+
+There are a few means to generate a binary compiled output,
+
++ Via the main/root entire-package compile method
+  - Follows the instructions outlined in the main/root README file
+
++ Via the main/root single component compile method
+  - In the main/root ITL directory,
+    -- If source is from CVS, run './autogen.sh'
+    -- Run 'make components'
+
++ Via a local single library-module method
+  - In the main/root ITL directory,
+    -- If source is from CVS, run './autogen.sh'
+    -- Run 'make' here
+
+

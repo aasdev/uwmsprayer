@@ -1,0 +1,16 @@
+
+Author:  Anees Shaikh
+
+uwmsprayer is a set of routines to generate prayer times, hijri dates,
+and prayer calendars for the Upper Westchester Muslim Society (UWMS)
+in NY (http://www.uwms.org). It
+uses the ITL library from the Arabeyes project
+(http://projects.arabeyes.org) as the basis for hijri and prayer time
+calculations, with localizations for UWMS in the uwmsprayer.h header
+file.  The program can be localized for different areas by modifying
+the header file appropriately.
+
+INSTALLATION
+
+just run 'make' at the top level, should compile on most Linux
+distros. It will first make the ITL library followed by uwmsprayer utility.

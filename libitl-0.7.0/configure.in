@@ -1,0 +1,28 @@
+# $Id: configure.in 2182 2009-03-09 04:43:45Z thamer $
+
+AC_PREREQ(2.57)
+AC_INIT([libitl],[0.7],[developer-at-arabeyes.org])
+
+AC_PROG_CC
+AC_PATH_PROG(LD, ld)
+AC_SUBST(LD)
+AC_HEADER_STDC
+AC_CHECK_HEADERS([stdlib.h])
+AC_C_CONST
+AC_TYPE_UID_T
+
+AC_CHECK_FUNCS([strcasecmp])
+AC_CHECK_LIB([m], [floor], , [AC_MSG_ERROR(library 'libm' is missing floor)])
+AC_CHECK_LIB([m], [modf], , [AC_MSG_ERROR(library 'libm' is missing modf)])
+AC_CHECK_LIB([m], [pow], , [AC_MSG_ERROR(library 'libm' is missing pow)])
+AC_CHECK_LIB([m], [atan2], , [AC_MSG_ERROR(library 'libm' is missing atan2)])
+
+# Checks for Link/Compile options
+SYSTEM=`uname -s`
+if test "$SYSTEM" = "SunOS"; then
+   LDFLAGS="$LDFLAGS -rpath-link /usr/include"
+fi
+
+AC_OUTPUT([build/config.mk])
+AC_CONFIG_FILES([Makefile])
+AC_OUTPUT

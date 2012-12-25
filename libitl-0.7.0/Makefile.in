@@ -1,0 +1,162 @@
+#--
+# $Id: Makefile,v 1.16 2006/09/21 16:24:00 thamer Exp $
+#--
+
+PREFIX		= @prefix@
+
+CC		= @CC@
+CFLAGS		= @CFLAGS@
+LDFLAGS		= @LDFLAGS@
+LIBS		= @LIBS@
+VERSION		= @PACKAGE_VERSION@
+TARNAME		= @PACKAGE_TARNAME@
+
+include build/config.mk
+
+SOVERSION=0
+MICRO_VERSION=0
+SONAME=libitl.so.$(SOVERSION)
+FULLNAME=$(SONAME).$(VERSION)
+FULLTARNAME=$(TARNAME)-$(VERSION).$(MICRO_VERSION)
+
+COMPONENTS = hijri prayertime
+
+all: configure shared static
+
+shared: configure build/config.mk build/libitl.so
+static: configure build/config.mk build/libitl.a
+
+configure: autogen.sh
+	@echo "Please run ./autogen.sh..."
+	@false
+
+build/config.mk: configure
+	@echo "Please run ./configure..."
+	@false
+
+build/libitl.so: components
+	$(LD) build/*.o $(LDFLAGS) -shared -lm -lc -soname=$(SONAME) -o build/$(FULLNAME)
+	(cd build/ && ln -sf $(FULLNAME) $(SONAME))
+	(cd build/ && ln -sf $(FULLNAME) libitl.so)
+
+build/libitl.a: static-components
+	$(AR) rcs build/libitl.a build/*.o
+
+components: clean-components
+	for i in $(COMPONENTS); do \
+	  $(MAKE) CFLAGS="@CFLAGS@ -fPIC" -C $$i libitl || exit 1; \
+	done
+
+static-components: clean-components
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i libitl || exit 1; \
+	done
+
+clean-components:
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i clean || exit 1; \
+	done
+
+debinstall: components
+	$(CC) build/*.o -shared -lm -lc -D_REENTRANT -Wl,-z,defs,-soname,$(SONAME) \
+	-o build/$(FULLNAME)
+	(cd build/ && ln -sf $(FULLNAME) $(SONAME))
+	(cd build/ && ln -sf $(FULLNAME) libitl.so)
+        #"Bug#437373
+        #strip --strip-unneeded build/$(FULLNAME)
+	rm -f build/*.o build/ITL_*
+	@echo "==> Installing libitl library..."
+	test -d $(PREFIX)/lib \
+	|| mkdir -p $(PREFIX)/lib \
+	|| exit 1;
+	cp build/$(FULLNAME) $(PREFIX)/lib
+	cp build/libitl.a $(PREFIX)/lib
+        # Using cp -P as cp --no-dereference is not POSIX
+        # or use --preserve=link instead.
+	cp -P build/$(SONAME) $(PREFIX)/lib
+	cp -P build/libitl.so $(PREFIX)/lib
+	@echo "==> Installing ITL components..."
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i install || exit 1; \
+	done
+	rm -f config.log config.status
+
+install: build/libitl.so build/libitl.a
+	@echo "==> Installing libitl library..."
+	test -d $(PREFIX)/lib/itl \
+	|| install -d $(PREFIX)/lib/itl \
+	|| exit 1;
+	install build/$(FULLNAME) $(PREFIX)/lib/itl
+	install build/libitl.a $(PREFIX)/lib/itl
+        # Using cp -P as cp --no-dereference is not POSIX
+        # or use --preserve=link instead.
+	cp -P build/$(SONAME) $(PREFIX)/lib/itl
+	cp -P build/libitl.so $(PREFIX)/lib/itl
+	@echo "==> Installing ITL components..."
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i install || exit 1; \
+	done
+
+uninstall:
+	@echo "==> Uninstalling ITL library..."
+	rm -rf $(PREFIX)/lib/itl
+	@echo "==> Removing ITL include dir..."
+	rm -rf $(PREFIX)/include/itl
+	@echo "==> Uninstalling ITL components..."
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i uninstall || exit 1; \
+	done
+
+swig: build/libitl.so
+	$(MAKE) -C "swig"
+
+clean:
+	@echo "==> Cleaning up ITL build..."
+	rm -f build/*.a build/*.so build/*.so.*
+	rm -f build/*.o build/itl/*.h
+	rm -rf build/itl/
+	$(MAKE) -C "swig" clean
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i clean || exit 1; \
+	done
+
+distclean: autogen.sh clean
+	fakeroot $(MAKE) -k -f debian/rules clean
+	rm -f Makefile
+	rm -f config.status config.cache config.log config.h
+	rm -f configure-stamp build-arch-stamp build/config.mk
+
+maintainer-clean: distclean
+	./autogen.sh clean
+
+dist: distclean
+# 	@echo "Creating ChangeLog..."
+# 	svn2cl > ChangeLog
+	@echo "Creating Package ..."
+	rm -rf /tmp/$(FULLTARNAME)/
+	mkdir /tmp/$(FULLTARNAME)/
+	cp -Pa ./ /tmp/$(FULLTARNAME)/
+	tar --exclude '.svn' -C /tmp/ -cvhzf ./$(FULLTARNAME).tar.gz $(FULLTARNAME)/
+	rm -rf /tmp/$(FULLTARNAME)/
+
+maintainer-debpackage: distclean
+        # Creating a deb package 
+	rm -rf /tmp/$(FULLTARNAME)
+	mkdir /tmp/$(FULLTARNAME)
+	find . -path '*.svn*' -prune -o  -print0 | cpio -pmd0 /tmp/$(FULLTARNAME)/
+	cd /tmp/$(FULLTARNAME) && find -name 'TAGS' -exec rm -f {} \;
+	cd /tmp/$(FULLTARNAME) && rm -f config.status config.cache config.log config.h
+	cd /tmp/ && tar -czv $(FULLTARNAME)/ -f $(TARNAME)_$(VERSION).$(MICRO_VERSION).orig.tar.gz
+        # Build packages
+	cd /tmp/$(FULLTARNAME) && dpkg-buildpackage -rfakeroot
+        # and then to check for errors, do:
+	cd /tmp/$(FULLTARNAME) && lintian -i ../$(TARNAME)_$(VERSION).$(MICRO_VERSION)-1_i386.changes
+
+libitl-libtool: configure build/config.mk
+	for i in $(COMPONENTS); do \
+	  $(MAKE) -C $$i libitl-libtool || exit 1; \
+	done
+	libtool --mode=link $(CC) -shared --version-info=0.7.0 -o build/$(FULLNAME) \
+	prayertime/src/*.lo hijri/src/*.lo -lm
+	(cd build/ && ln -sf $(FULLNAME) $(SONAME))
+	(cd build/ && ln -sf $(FULLNAME) libitl.so)
